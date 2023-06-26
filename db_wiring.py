@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///eq_monitor.db"
+
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -144,3 +145,4 @@ def get_data_by_date_endpoint(email: str, date: datetime, db: Session = Depends(
         raise HTTPException(status_code=404, detail="User not found or no data available for the specified date")
     
     return user_data
+
