@@ -6,7 +6,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///C:\\Users\\egory\\OneDrive\\Документы\\GitHub\\practice\\eq_monitor.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:///eq_monitor.db"
+# SQLALCHEMY_DATABASE_URL = "sqlite:///C:\\Users\\egory\\OneDrive\\Документы\\GitHub\\practice\\eq_monitor.db"
 # SQLALCHEMY_DATABASE_URL = "postgresql://user:password@postgresserver/db"
 
 engine = create_engine(
