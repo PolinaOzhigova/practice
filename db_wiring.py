@@ -1,11 +1,11 @@
 import os
 from datetime import datetime
-from fastapi import FastAPI, File, UploadFile, Depends, Form
+from fastapi import FastAPI, File, UploadFile, Depends, Form, Query
 from pydantic import EmailStr, BaseModel
 from typing import List
 
-from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, func
+from sqlalchemy.orm import sessionmaker, relationship, joinedload
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session
 
@@ -134,14 +134,28 @@ async def get_data_by_date(
     data = db.query(FileUpload).filter(
         FileUpload.date_start >= date_start_obj,
         FileUpload.date_end <= date_end_obj
-    ).all()
+    ).options(joinedload(FileUpload.user)).all()
 
-    return data
+    # Преобразование результатов запроса в список объектов FileUploadData
+    result = []
+    for item in data:
+        file_upload_data = FileUploadData(
+            id=item.id,
+            filename=item.filename,
+            file_path=item.file_path,
+            date_start=item.date_start.strftime("%d.%m.%Y"),
+            date_end=item.date_end.strftime("%d.%m.%Y"),
+            data_type=item.data_type,
+            user_id=item.user_id
+        )
+        result.append(file_upload_data)
+
+    return result
 
 # Получение последних загруженных данных для каждого пользователя
 @api.get("/latest_data/")
 async def get_latest_data(db: Session = Depends(get_db)):
-    subquery = db.query(FileUpload.user_id, db.func.max(FileUpload.id).label("latest_id")).group_by(FileUpload.user_id).subquery()
+    subquery = db.query(FileUpload.user_id, func.max(FileUpload.id).label("latest_id")).group_by(FileUpload.user_id).subquery()
     latest_data = db.query(FileUpload).join(subquery, FileUpload.id == subquery.c.latest_id).all()
     return latest_data
 
