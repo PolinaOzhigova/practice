@@ -1,6 +1,9 @@
 import os
 from datetime import datetime
 from fastapi import FastAPI, File, UploadFile, Depends, Form
+from pydantic import EmailStr, BaseModel
+from typing import List
+
 from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -27,7 +30,8 @@ class FileUpload(Base):
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, unique=True, index=True)
     file_path = Column(String)
-    upload_date = Column(Date)
+    date_start = Column(Date)
+    date_end = Column(Date)
     data_type = Column(String)
     user_id = Column(Integer, ForeignKey("users.id"))
     user = relationship("User", back_populates="files")
@@ -45,11 +49,22 @@ def get_db():
     finally:
         db.close()
 
+# Создаем модель данных для объекта FileUpload
+class FileUploadData(BaseModel):
+    id: int
+    filename: str
+    file_path: str
+    date_start: str
+    date_end: str
+    data_type: str
+    user_id: int
+
 # Загрузка файла и сохранение в базе данных
 @api.post("/upload/")
 async def upload_file(
     file: UploadFile = File(...),
-    upload_date: str = Form(...),
+    date_start: str = Form(...),
+    date_end: str = Form(...),
     data_type: str = Form(...),
     email: str = Form(...),
     db: Session = Depends(get_db)
@@ -68,7 +83,8 @@ async def upload_file(
         f.write(await file.read())
     
     # Преобразуем строку даты в объект типа date
-    upload_date_obj = datetime.strptime(upload_date, "%d.%m.%Y").date()
+    date_start_obj = datetime.strptime(date_start, "%d.%m.%Y").date()
+    date_end_obj = datetime.strptime(date_end, "%d.%m.%Y").date()
     
     # Ищем пользователя по email в базе данных
     user = db.query(User).filter(User.email == email).first()
@@ -84,7 +100,8 @@ async def upload_file(
     db_file = FileUpload(
         filename=file.filename,
         file_path=file_path,
-        upload_date=upload_date_obj,
+        date_start=date_start_obj,
+        date_end=date_end_obj,
         data_type=data_type,
         user_id=user.id
     )
@@ -102,6 +119,24 @@ async def create_user(email: str = Form(...), db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
     return {"message": "Пользователь успешно создан", "user_id": user.id}
+
+@api.get("/search_by_date/", response_model=List[FileUploadData])
+async def get_data_by_date(
+    date_start: str = Query(..., description="Дата начала в формате дд.мм.гггг"),
+    date_end: str = Query(..., description="Дата окончания в формате дд.мм.гггг"),
+    db: Session = Depends(get_db)
+):
+    # Преобразуем строки дат в объекты типа date
+    date_start_obj = datetime.strptime(date_start, "%d.%m.%Y").date()
+    date_end_obj = datetime.strptime(date_end, "%d.%m.%Y").date()
+
+    # Запрос к базе данных для поиска данных в указанном диапазоне дат
+    data = db.query(FileUpload).filter(
+        FileUpload.date_start >= date_start_obj,
+        FileUpload.date_end <= date_end_obj
+    ).all()
+
+    return data
 
 # Получение последних загруженных данных для каждого пользователя
 @api.get("/latest_data/")
