@@ -66,7 +66,7 @@ async def upload_file(
     date_start: str = Form(...),
     date_end: str = Form(...),
     data_type: str = Form(...),
-    email: str = Form(...),
+    email: EmailStr = Form(...),
     db: Session = Depends(get_db)
 ):
     file_path = f"uploads/{file.filename}"
@@ -113,7 +113,7 @@ async def upload_file(
 
 # Создание пользователя
 @api.post("/users/")
-async def create_user(email: str = Form(...), db: Session = Depends(get_db)):
+async def create_user(email: EmailStr = Form(...), db: Session = Depends(get_db)):
     user = User(email=email)
     db.add(user)
     db.commit()
