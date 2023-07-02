@@ -12,6 +12,9 @@ uvicorn = {extras = ["basemodel"], version = "^0.22.0"}
 pydantic = {extras = ["email"], version = "^1.10.9"}
 sqlalchemy = "^2.0.16"
 python-multipart = "^0.0.6"
+httpx = "^0.24.1"
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"
 
 
 [build-system]
