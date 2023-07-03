@@ -171,7 +171,7 @@ async def get_latest_data(db: Session = Depends(get_db)):
     return latest_data
 
 # Обработка данных по пользователю
-@api.get("/process_data/{user_id}")
+@api.get("/make_picture/{user_id}")
 async def process_data(user_id: int, db: Session = Depends(get_db)):
     # Обработка данных для пользователя с указанным user_id
     # В этом эндпоинте можно реализовать необходимую логику обработки данных
