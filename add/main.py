@@ -1,13 +1,11 @@
 import os
 from datetime import datetime
 from fastapi import FastAPI, File, UploadFile, Depends, Form, Query
-from fastapi.testclient import TestClient
 from pydantic import EmailStr, BaseModel
 from typing import List
 
 from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, func
-from sqlalchemy.orm import sessionmaker, relationship, joinedload
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, relationship, joinedload, declarative_base
 from sqlalchemy.orm import Session
 
 api = FastAPI()
