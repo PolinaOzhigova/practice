@@ -8,6 +8,7 @@ from loguru import logger
 from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, func
 from sqlalchemy.orm import sessionmaker, relationship, joinedload, declarative_base
 from sqlalchemy.orm import Session
+from turkey_eq import plot_maps
 
 api = FastAPI()
 
@@ -176,3 +177,8 @@ async def process_data(user_id: int, db: Session = Depends(get_db)):
     # Обработка данных для пользователя с указанным user_id
     # В этом эндпоинте можно реализовать необходимую логику обработки данных
     return {"message": f"Обработка данных для пользователя с ID: {user_id}"}
+
+# @api.post("/plot_maps")
+# async def plot_maps_endpoint():
+#     plot_maps([FILES_PRODUCT_10_24], FILES_PRODUCT_10_24, 
+#           EPICENTERS['10:24'])
