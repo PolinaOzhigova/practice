@@ -14,7 +14,9 @@
 ```
 2 Установите cartopy.
 
-```conda install cartopy```
+```
+conda install cartopy
+```
 
 3 Клонируйте репозиторий и перейдите в папку с микросервисом.
 
@@ -32,4 +34,6 @@ poetry install
 
 5 Запустите микросервис
 
-```uvicorn app.main:api --reload --port 8083```
+```
+uvicorn app.main:api --reload --port 8083
+```
