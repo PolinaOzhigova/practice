@@ -3,12 +3,15 @@ from datetime import datetime
 from fastapi import FastAPI, File, UploadFile, Depends, Form, Query
 from pydantic import EmailStr, BaseModel
 from typing import List
+from loguru import logger
 
 from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, func
 from sqlalchemy.orm import sessionmaker, relationship, joinedload, declarative_base
 from sqlalchemy.orm import Session
 
 api = FastAPI()
+
+logger.add("./logs/info.log", retention="1 week")
 
 # Создаем подключение к базе данных
 SQLALCHEMY_DATABASE_URL = "sqlite:///uploads.db"
@@ -68,10 +71,12 @@ async def upload_file(
     email: EmailStr = Form(...),
     db: Session = Depends(get_db)
 ):
+    logger.info("Uploading a file")
     file_path = f"uploads/{file.filename}"
     
     # Проверяем, существует ли файл
     if os.path.exists(file_path):
+        logger.error("File is already exsist")
         return {"message": "Файл уже загружен"}
     
     # Создаем директорию "uploads", если она не существует
@@ -90,6 +95,7 @@ async def upload_file(
     
     # Если пользователя нет, то создаем нового
     if not user:
+        logger.info("Creating a user")
         user = User(email=email)
         db.add(user)
         db.commit()
@@ -108,15 +114,21 @@ async def upload_file(
     db.commit()
     db.refresh(db_file)
     
+    logger.info("File successfully uploaded")
     return {"message": "Файл успешно загружен"}
 
 # Создание пользователя
 @api.post("/users/")
 async def create_user(email: EmailStr = Form(...), db: Session = Depends(get_db)):
+    logger.info("Creating a user")
+    
     user = User(email=email)
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    logger.info(f"User {user} created successfully")
+
     return {"message": "Пользователь успешно создан", "user_id": user.id}
 
 @api.get("/search_by_date/", response_model=List[FileUploadData])
