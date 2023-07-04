@@ -3,12 +3,14 @@ from datetime import datetime
 from fastapi import FastAPI, File, UploadFile, Depends, Form, Query
 from pydantic import EmailStr, BaseModel
 from typing import List
+import matplotlib.pyplot as plt
 from loguru import logger
+import numpy
+from turkey.turkey import plot_maps, plot_map
 
 from sqlalchemy import create_engine, Column, Integer, String, Date, ForeignKey, func
 from sqlalchemy.orm import sessionmaker, relationship, joinedload, declarative_base
 from sqlalchemy.orm import Session
-from turkey_eq import plot_maps
 
 api = FastAPI()
 
@@ -61,6 +63,32 @@ class FileUploadData(BaseModel):
     date_end: str
     data_type: str
     user_id: int
+
+def plot_map(times, data, data_type, lat_limits, lon_limits, ncols, sort, markers, clims, savefig):
+    plt.figure()
+    plt.plot(times, data[data_type])
+    plt.xlabel('Время')
+    plt.ylabel(data_type)
+    plt.title('График {}'.format(data_type))
+
+    # Опционально: добавление маркеров на график
+    for marker in markers:
+        plt.plot(marker['time'], data[data_type][0], marker='o', markersize=8, label='Эпицентр')
+
+    # Опционально: установка ограничений для широты и долготы
+    plt.ylim(lat_limits)
+    plt.xlim(lon_limits)
+
+    # Опционально: установка цветовой шкалы
+    cmin, cmax, cunit = clims[data_type]
+    plt.colorbar(label=cunit)
+
+    # Опционально: сохранение графика в файл
+    if savefig:
+        plt.savefig(savefig)
+
+    # Отображение графика
+    plt.show()
 
 # Загрузка файла и сохранение в базе данных
 @api.post("/upload/")
@@ -171,14 +199,26 @@ async def get_latest_data(db: Session = Depends(get_db)):
     latest_data = db.query(FileUpload).join(subquery, FileUpload.id == subquery.c.latest_id).all()
     return latest_data
 
-# Обработка данных по пользователю
-@api.get("/make_picture/{user_id}")
-async def process_data(user_id: int, db: Session = Depends(get_db)):
-    # Обработка данных для пользователя с указанным user_id
-    # В этом эндпоинте можно реализовать необходимую логику обработки данных
-    return {"message": f"Обработка данных для пользователя с ID: {user_id}"}
+@api.get("/plot/")
+async def plot_graph(db: Session = Depends(get_db)):
+    # Получаем данные из базы данных по идентификатору файла
+    file_data = db.query(FileUpload).filter(FileUpload.id == file_id).first()
 
-# @api.post("/plot_maps")
-# async def plot_maps_endpoint():
-#     plot_maps([FILES_PRODUCT_10_24], FILES_PRODUCT_10_24, 
-#           EPICENTERS['10:24'])
+    if file_data:
+        # Загрузка данных из файла и подготовка их для построения графика
+        times, data = load_data_from_file(file_data)
+
+        # Установка параметров для построения графика
+        lat_limits = (25, 50)
+        lon_limits = (25, 50)
+        ncols = 1
+        sort = True
+        markers = [EPICENTERS['10:24']]
+        clims = C_LIMITS
+
+        # Построение графика
+        plot_map(times, data, "ROTI", lat_limits, lon_limits, ncols, sort, markers, clims, savefig='')
+
+        return {"message": "График успешно построен"}
+    else:
+        return {"message": "Файл с указанным идентификатором не найден"}
